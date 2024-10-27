@@ -1,6 +1,7 @@
 {
   "name": "puissance4",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "proxy": "http://localhost:8080",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
@@ -20,7 +21,7 @@
   },
   "eslintConfig": {
     "extends": [
-      "react-app",
+      "react-app", 
       "react-app/jest"
     ]
   },
