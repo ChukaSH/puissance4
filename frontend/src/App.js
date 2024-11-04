@@ -6,6 +6,7 @@ function App() {
   const [grid, setGrid] = useState([]);
   const [currentPlayer, setCurrentPlayer] = useState('');
   const [gameWon, setGameWon] = useState(false);
+  const [gameDraw, setGameDraw] = useState(false);
 
   // Initialisation du jeu
   useEffect(() => {
@@ -16,10 +17,11 @@ function App() {
   const fetchGameStatus = async () => {
     try {
       const response = await axios.get('http://localhost:8080/puissance4/status');
-      const { grid, currentPlayer, gameWon } = response.data;
+      const { grid, currentPlayer, gameWon, gameDraw } = response.data;
       setGrid(grid);
       setCurrentPlayer(currentPlayer);
       setGameWon(gameWon);
+      setGameDraw(gameDraw);
     } catch (error) {
       console.error("Erreur lors de la récupération de l'état du jeu :", error);
     }
@@ -29,6 +31,11 @@ function App() {
   const playMove = async (columnIndex) => {
     if (gameWon) {
       alert("La partie est terminée. Veuillez réinitialiser pour jouer une nouvelle partie.");
+      return;
+    }
+
+    if(gameDraw) {
+      alert("Jeu nul. Veuillez réinitialiser pour jouer une nouvelle partie.");
       return;
     }
 
@@ -69,8 +76,13 @@ function App() {
           </div>
         ))}
       </div>
-      <h2>Tour du joueur: {currentPlayer === 'red' ? 'Rouge' : 'Jaune'}</h2>
-      {gameWon && <h2>Le joueur {currentPlayer === 'red' ? 'Jaune' : 'Rouge'} a gagné!</h2>}
+      {gameWon ? (
+        <h2>Le joueur {currentPlayer === 'red' ? 'Jaune' : 'Rouge'} a gagné!</h2>
+      ) : gameDraw ? (
+        <h2>Jeu nul!</h2>
+      ) : (
+        <h2>Tour du joueur: {currentPlayer === 'red' ? 'Rouge' : 'Jaune'}</h2>
+      )}
       <button onClick={resetGame}>Réinitialiser la partie</button>
     </div>
   );
