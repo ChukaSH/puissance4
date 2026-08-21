@@ -55,7 +55,7 @@ Démarrez l'application React (front-end) :
 
 Ouvrez un autre terminal, allez dans le dossier frontend, et installez les dépendances :
 ```bash
-cd ../frontend
+cd frontend
 npm install
 ```
 
