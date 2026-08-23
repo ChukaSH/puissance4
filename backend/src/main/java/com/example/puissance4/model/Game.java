@@ -11,24 +11,22 @@ public class Game {
     public static final int COLUMNS = 7;
     public static final int ROWS = 6;
 
-    private String[][] grid; // Grille du jeu (7 colonnes, 6 lignes)
-    private String currentPlayer; // Joueur actuel ("red" ou "yellow")
-    private boolean gameWon;
-    private boolean gameDraw;
+    private Player[][] grid; // Grille du jeu (7 colonnes, 6 lignes)
+    private Player currentPlayer; // Joueur actuel (RED ou YELLOW)
+    private GameState state;
 
     public Game() {
-        this.grid = new String[ROWS][COLUMNS];
-        for (String[] row : grid) {
+        this.grid = new Player[ROWS][COLUMNS];
+        for (Player[] row : grid) {
             Arrays.fill(row, null);
         }
-        this.currentPlayer = "red";
-        this.gameWon = false;
-        this.gameDraw = false;
+        this.currentPlayer = Player.RED;
+        this.state = Status.IN_PROGRESS;
     }
 
     public boolean dropToken(int columnIndex) {
-        if (columnIndex < 0 || columnIndex >= COLUMNS || gameWon || gameDraw) {
-            return false; // Colonne invalide ou partie déjà finie
+        if (columnIndex < 0 || columnIndex >= COLUMNS || isGameWon() || isGameDraw()) {
+            return false; 
         }
     
         for (int rowIndex = ROWS - 1; rowIndex >= 0; rowIndex--) {
@@ -37,13 +35,13 @@ public class Game {
                 
                 // Vérifie si le joueur a gagné avec ce mouvement
                 if (checkWin(rowIndex, columnIndex)) {
-                    gameWon = true;
+                    state = new Won(grid[rowIndex][columnIndex]);
                 } else if (isDraw()) {
-                    gameDraw = true;
+                    state = Status.DRAW;
                 }
     
                 // Changement de joueur uniquement si le mouvement est valide
-                currentPlayer = currentPlayer.equals("red") ? "yellow" : "red";
+                currentPlayer = currentPlayer.opponent();
                 return true;
             }
         }
@@ -51,14 +49,14 @@ public class Game {
     }
     
     private boolean checkWin(int row, int col) {
-        String player = grid[row][col];
+        Player player = grid[row][col];
         return checkDirection(row, col, 1, 0, player) ||  // Verticale
                checkDirection(row, col, 0, 1, player) ||  // Horizontale
                checkDirection(row, col, 1, 1, player) ||  // Diagonale \
                checkDirection(row, col, 1, -1, player);            // Diagonale /
     }
   
-    private boolean checkDirection(int row, int col, int rowDelta, int colDelta, String player) {
+    private boolean checkDirection(int row, int col, int rowDelta, int colDelta, Player currentPlayer) {
         int count = 0;
     
         // Vérifie dans une direction (ex : droite, bas, diagonale) sur 4 cases maximum
@@ -66,7 +64,7 @@ public class Game {
             int r = row + i * rowDelta;
             int c = col + i * colDelta;
     
-            if (r >= 0 && r < ROWS && c >= 0 && c < COLUMNS && grid[r][c] != null && grid[r][c].equals(player)) {
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLUMNS && grid[r][c] != null && grid[r][c] == currentPlayer) {
                 count++;
                 if (count == 4) {
                     return true;
@@ -88,16 +86,12 @@ public class Game {
         }
         return true; // Toutes les cellules sont pleines, jeu nul
     }
-    // // Test de check de direction via stream - OBSOLETE bug parfois
-    // private boolean checkDirection(int row, int col, int rowDelta, int colDelta, String player) {
-    //     return java.util.stream.IntStream.rangeClosed(-3, 3)
-    //         .mapToObj(i -> new int[]{row + i * rowDelta, col + i * colDelta})
-    //         .filter(pos -> isWithinBounds(pos[0], pos[1]) && player.equals(grid[pos[0]][pos[1]]))
-    //         .map(pos -> 1) 
-    //         .collect(java.util.stream.Collectors.summingInt(Integer::intValue)) >= 4;
-    // }
-    
-    // private boolean isWithinBounds(int row, int col) {
-    //     return row >= 0 && row < ROWS && col >= 0 && col < COLUMNS;
-    // }
+
+    public boolean isGameWon() {
+        return state instanceof Won;
+    }
+
+    public boolean isGameDraw() {
+        return state == Status.DRAW;
+    }
 }
