@@ -2,63 +2,58 @@ package com.example.puissance4.model;
 
 import java.util.Arrays;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
 public class Game {
     
     public static final int COLUMNS = 7;
     public static final int ROWS = 6;
 
-    private String[][] grid; // Grille du jeu (7 colonnes, 6 lignes)
-    private String currentPlayer; // Joueur actuel ("red" ou "yellow")
-    private boolean gameWon;
-    private boolean gameDraw;
+    private Cell[][] grid; // Grille du jeu (7 colonnes, 6 lignes)
+    private Player currentPlayer; // Joueur actuel (RED ou YELLOW)
+    private GameState state;
 
     public Game() {
-        this.grid = new String[ROWS][COLUMNS];
-        for (String[] row : grid) {
-            Arrays.fill(row, null);
+        this.grid = new Cell[ROWS][COLUMNS];
+        for (Cell[] row : grid) {
+            Arrays.fill(row, Empty.EMPTY);
         }
-        this.currentPlayer = "red";
-        this.gameWon = false;
-        this.gameDraw = false;
+        this.currentPlayer = Player.RED;
+        this.state = Status.IN_PROGRESS;
     }
 
     public boolean dropToken(int columnIndex) {
-        if (columnIndex < 0 || columnIndex >= COLUMNS || gameWon || gameDraw) {
-            return false; // Colonne invalide ou partie déjà finie
+        if (columnIndex < 0 || columnIndex >= COLUMNS || isGameWon() || isGameDraw()) {
+            return false; 
         }
     
         for (int rowIndex = ROWS - 1; rowIndex >= 0; rowIndex--) {
-            if (grid[rowIndex][columnIndex] == null) {
-                grid[rowIndex][columnIndex] = currentPlayer;
-                
+            if (grid[rowIndex][columnIndex] instanceof Empty) {
+                grid[rowIndex][columnIndex] = new Filled(currentPlayer);
+
                 // Vérifie si le joueur a gagné avec ce mouvement
-                if (checkWin(rowIndex, columnIndex)) {
-                    gameWon = true;
+                if (checkWin(rowIndex, columnIndex, currentPlayer)) {
+                    state = new Won(currentPlayer);
                 } else if (isDraw()) {
-                    gameDraw = true;
+                    state = Status.DRAW;
                 }
     
                 // Changement de joueur uniquement si le mouvement est valide
-                currentPlayer = currentPlayer.equals("red") ? "yellow" : "red";
+                currentPlayer = currentPlayer.opponent();
                 return true;
             }
         }
         return false;
     }
     
-    private boolean checkWin(int row, int col) {
-        String player = grid[row][col];
+    private boolean checkWin(int row, int col, Player player) {
         return checkDirection(row, col, 1, 0, player) ||  // Verticale
                checkDirection(row, col, 0, 1, player) ||  // Horizontale
                checkDirection(row, col, 1, 1, player) ||  // Diagonale \
                checkDirection(row, col, 1, -1, player);            // Diagonale /
     }
   
-    private boolean checkDirection(int row, int col, int rowDelta, int colDelta, String player) {
+    private boolean checkDirection(int row, int col, int rowDelta, int colDelta, Player player) {
         int count = 0;
     
         // Vérifie dans une direction (ex : droite, bas, diagonale) sur 4 cases maximum
@@ -66,7 +61,7 @@ public class Game {
             int r = row + i * rowDelta;
             int c = col + i * colDelta;
     
-            if (r >= 0 && r < ROWS && c >= 0 && c < COLUMNS && grid[r][c] != null && grid[r][c].equals(player)) {
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLUMNS && grid[r][c] instanceof Filled(Player p) && p == player) {
                 count++;
                 if (count == 4) {
                     return true;
@@ -81,23 +76,19 @@ public class Game {
     private boolean isDraw() {
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLUMNS; col++) {
-                if (grid[row][col] == null) {
+                if (grid[row][col] == Empty.EMPTY) {
                     return false; // Si une cellule est vide, il n'y a pas de jeu nul
                 }
             }
         }
         return true; // Toutes les cellules sont pleines, jeu nul
     }
-    // // Test de check de direction via stream - OBSOLETE bug parfois
-    // private boolean checkDirection(int row, int col, int rowDelta, int colDelta, String player) {
-    //     return java.util.stream.IntStream.rangeClosed(-3, 3)
-    //         .mapToObj(i -> new int[]{row + i * rowDelta, col + i * colDelta})
-    //         .filter(pos -> isWithinBounds(pos[0], pos[1]) && player.equals(grid[pos[0]][pos[1]]))
-    //         .map(pos -> 1) 
-    //         .collect(java.util.stream.Collectors.summingInt(Integer::intValue)) >= 4;
-    // }
-    
-    // private boolean isWithinBounds(int row, int col) {
-    //     return row >= 0 && row < ROWS && col >= 0 && col < COLUMNS;
-    // }
+
+    public boolean isGameWon() {
+        return state instanceof Won;
+    }
+
+    public boolean isGameDraw() {
+        return state == Status.DRAW;
+    }
 }
